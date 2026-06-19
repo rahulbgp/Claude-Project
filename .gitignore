@@ -22,3 +22,14 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime reports
+reports/*.html
+reports/*.csv
+reports/*.json
+
+# Claude local settings (personal overrides, API keys)
+.claude/settings.local.json
+
+# Virtual environment
+.venv/

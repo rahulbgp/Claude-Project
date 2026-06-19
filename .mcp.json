@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "loan-rules": {
+      "type": "http",
+      "url": "http://localhost:8765/mcp",
+      "description": "LoanRulesMCP — exposes loan policy rules (credit score thresholds, DTI limits, age policy, employment scores)"
+    },
+    "audit": {
+      "type": "http",
+      "url": "http://localhost:8766/mcp",
+      "description": "AuditMCP — exposes audit trail logging and decision history retrieval"
+    }
+  }
+}

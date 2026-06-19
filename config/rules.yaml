@@ -1,0 +1,31 @@
+credit_score:
+  minimum: 700
+  excellent: 750
+
+dti:
+  max_ratio: 0.40
+  preferred_ratio: 0.30
+
+age:
+  min: 21
+  max: 60
+
+employment:
+  Salaried: 1.0
+  Self-Employed: 0.75
+  Contract: 0.60
+  Unemployed: 0.0
+
+loan:
+  max_loan_to_income_ratio: 10
+  default_tenure_months: 60
+  default_annual_interest_rate: 0.10
+
+risk_weights:
+  credit_factor: 0.45
+  dti_factor: 0.35
+  employment_factor: 0.20
+
+compliance:
+  regulatory_framework: RBI_FAIR_LENDING_2023
+  kyc_required: true
