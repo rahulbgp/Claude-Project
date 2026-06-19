@@ -1,11 +1,17 @@
 """
 OrchestratorAgent: The central coordinator for the multi-agent pipeline.
 
+Pipeline (8 agents):
+  1. CustomerAgent      — validate & segment customer
+  2. KnowledgeAgent     — retrieve policy context via RAG + MCP
+  3. EligibilityCheckerAgent — tool-use eligibility loop
+  4. RiskAssessorAgent  — composite risk band
+  5. ExplainerAgent     — rule-based verdict + LLM explanation
+  6. ComplianceAgent    — regulatory compliance validation
+  7. AuditAgent         — structured audit record
+
 Features:
-- Autonomous planning: dynamically generates an execution plan based on applicant profile
-- Multi-agent coordination: delegates to EligibilityCheckerAgent, RiskAssessorAgent, ExplainerAgent
-- Self-healing: retries failed agents with exponential backoff; activates fallback if all retries fail
-- Full tracing: logs each plan step and agent execution result
+- Autonomous planning, multi-agent collaboration, self-healing retries + fallback
 """
 
 import logging
@@ -17,6 +23,10 @@ import anthropic
 from agents.eligibility_checker import EligibilityCheckerAgent
 from agents.explainer import EligibilityResult, ExplainerAgent, LoanDecision, Verdict
 from agents.risk_assessor import RiskAssessorAgent
+from agents.customer_agent import CustomerAgent
+from agents.knowledge_agent import KnowledgeAgent
+from agents.compliance_agent import ComplianceAgent
+from agents.audit_agent import AuditAgent
 from config import ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL, MAX_RETRIES, MODEL, RETRY_BASE_DELAY
 from observability.tracer import tracer
 from observability.metrics import record_agent_failure
@@ -44,10 +54,14 @@ class OrchestratorAgent:
             client_kwargs["base_url"] = ANTHROPIC_BASE_URL
         self.client = anthropic.Anthropic(**client_kwargs)
 
-        # Initialize specialist agents
+        # Initialize all 7 specialist agents
+        self.customer_agent = CustomerAgent(self.client)
+        self.knowledge_agent = KnowledgeAgent(self.client)
         self.eligibility_agent = EligibilityCheckerAgent(self.client)
         self.risk_agent = RiskAssessorAgent(self.client)
         self.explainer_agent = ExplainerAgent(self.client)
+        self.compliance_agent = ComplianceAgent(self.client)
+        self.audit_agent = AuditAgent(self.client)
 
     def run(self, applicant_data: dict, trace_id: str) -> LoanDecision:
         """
@@ -56,16 +70,37 @@ class OrchestratorAgent:
         Returns a LoanDecision with verdict, reasons, and explanation.
         """
         with tracer.trace_span(trace_id, "orchestrator", "OrchestratorAgent"):
-            # Step 1: Create the execution plan (autonomous planning)
+            import time as _time
+            _start = _time.time()
+
+            # Step 1: Autonomous planning
             plan = self._create_plan(applicant_data)
             tracer.log_plan(trace_id, plan)
 
-            # Step 2: Check for fast-path short-circuits
+            # Step 2: Customer context — validate & segment
+            customer_ctx = self._run_with_retry(
+                agent_name="CustomerAgent",
+                agent_fn=lambda: self.customer_agent.run(applicant_data, trace_id),
+                fallback_fn=lambda: self.customer_agent._fallback_customer_context(applicant_data),
+                trace_id=trace_id,
+            )
+            applicant_data["customer_segment"] = customer_ctx.get("segment", "STANDARD")
+
+            # Step 3: Knowledge retrieval — RAG + MCP policy context
+            policy_context = self._run_with_retry(
+                agent_name="KnowledgeAgent",
+                agent_fn=lambda: self.knowledge_agent.run(applicant_data, trace_id),
+                fallback_fn=lambda: self.knowledge_agent._fallback_policy_context(applicant_data),
+                trace_id=trace_id,
+            )
+            applicant_data["policy_context"] = policy_context
+
+            # Step 4: Fast-path short-circuits (age / unemployed)
             shortcut = self._check_fast_path(applicant_data, trace_id)
             if shortcut is not None:
                 return shortcut
 
-            # Step 3: Run the main eligibility check (with retries)
+            # Step 5: Eligibility check
             eligibility = self._run_with_retry(
                 agent_name="EligibilityCheckerAgent",
                 agent_fn=lambda: self.eligibility_agent.run(applicant_data, trace_id),
@@ -73,7 +108,7 @@ class OrchestratorAgent:
                 trace_id=trace_id,
             )
 
-            # Step 4: Run the risk assessment (with retries)
+            # Step 6: Risk assessment
             risk_band = self._run_with_retry(
                 agent_name="RiskAssessorAgent",
                 agent_fn=lambda: self.risk_agent.run(applicant_data, eligibility.dti_ratio, trace_id),
@@ -81,11 +116,34 @@ class OrchestratorAgent:
                 trace_id=trace_id,
             )
 
-            # Step 5: Generate decision and explanation (with retries)
+            # Step 7: Verdict + explanation
             decision = self._run_with_retry(
                 agent_name="ExplainerAgent",
                 agent_fn=lambda: self.explainer_agent.run(eligibility, risk_band, applicant_data, trace_id),
                 fallback_fn=lambda: self._fallback_decision(eligibility, risk_band, applicant_data),
+                trace_id=trace_id,
+            )
+
+            # Step 8: Compliance validation
+            bias_flags: list = []
+            compliance_result = self._run_with_retry(
+                agent_name="ComplianceAgent",
+                agent_fn=lambda: self.compliance_agent.run(decision, applicant_data, bias_flags, trace_id),
+                fallback_fn=lambda: self.compliance_agent._fallback_compliance(decision, applicant_data, bias_flags),
+                trace_id=trace_id,
+            )
+
+            # Step 9: Audit record
+            processing_ms = int((_time.time() - _start) * 1000)
+            self._run_with_retry(
+                agent_name="AuditAgent",
+                agent_fn=lambda: self.audit_agent.run(
+                    decision, applicant_data, {}, bias_flags,
+                    compliance_result, processing_ms, trace_id
+                ),
+                fallback_fn=lambda: self.audit_agent._fallback_audit_record(
+                    decision, {}, bias_flags, compliance_result, processing_ms, trace_id
+                ),
                 trace_id=trace_id,
             )
 
@@ -95,6 +153,8 @@ class OrchestratorAgent:
                     "trace_id": trace_id,
                     "verdict": decision.verdict.value,
                     "risk_band": risk_band,
+                    "compliant": compliance_result.get("compliant", True),
+                    "segment": customer_ctx.get("segment"),
                 },
             )
             return decision
@@ -110,7 +170,10 @@ class OrchestratorAgent:
         age = applicant_data.get("age", 35)
         employment_type = applicant_data.get("employment_type", "Salaried")
 
-        plan = [{"name": "policy_fetch", "description": "Fetch current loan rules from MCP server"}]
+        plan = [
+            {"name": "customer_context", "description": "Validate & segment customer"},
+            {"name": "knowledge_retrieval", "description": "RAG + MCP policy context"},
+        ]
 
         # If clearly a hard failure, plan for quick rejection path
         if age < 21 or age > 60:

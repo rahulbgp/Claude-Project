@@ -28,6 +28,8 @@ from config import (
 )
 from tools.loan_tools import TOOL_SCHEMAS, execute_tool
 from observability.tracer import tracer
+from observability.metrics import record_token_usage
+from core.context_window import ContextWindowManager
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +106,9 @@ class EligibilityCheckerAgent:
 
         raw_tool_results = {}
         tool_calls_count = 0
+        ctx_mgr = ContextWindowManager()
+        for msg in messages:
+            ctx_mgr.add(msg)
 
         # Agentic loop
         for _ in range(8):  # Max 8 tool-use rounds
@@ -111,8 +116,12 @@ class EligibilityCheckerAgent:
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
                 tools=ELIGIBILITY_TOOLS,
-                messages=messages,
+                messages=ctx_mgr.get_trimmed(),
             )
+
+            record_token_usage("EligibilityCheckerAgent",
+                               getattr(response.usage, "input_tokens", 0),
+                               getattr(response.usage, "output_tokens", 0))
 
             tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
 
@@ -136,8 +145,8 @@ class EligibilityCheckerAgent:
                     "content": result,
                 })
 
-            messages.append({"role": "assistant", "content": response.content})
-            messages.append({"role": "user", "content": tool_results})
+            ctx_mgr.add({"role": "assistant", "content": response.content})
+            ctx_mgr.add({"role": "user", "content": tool_results})
 
         # Max rounds reached — fall back
         return self._fallback_eligibility(applicant_data)

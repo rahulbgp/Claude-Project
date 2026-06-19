@@ -54,6 +54,20 @@ MCP_CALLS_TOTAL = Counter(
     ["server_name", "tool_name", "status"],
 )
 
+# LLM token usage tracking (input + output tokens per agent)
+LLM_TOKENS_TOTAL = Counter(
+    "llm_tokens_total",
+    "Total LLM tokens consumed",
+    ["agent_name", "token_type"],
+)
+
+# Token usage histogram — distribution of tokens per request
+LLM_TOKENS_PER_REQUEST = Histogram(
+    "llm_tokens_per_request",
+    "Total tokens (input+output) used per loan request",
+    buckets=[100, 500, 1000, 2000, 5000, 10000, 20000],
+)
+
 
 def start_metrics_server(port: int = 9090) -> None:
     """Start the Prometheus metrics HTTP server (only starts once)."""
@@ -85,3 +99,16 @@ def record_mcp_call(server_name: str, tool_name: str, success: bool) -> None:
     """Record an MCP tool call."""
     status = "success" if success else "failure"
     MCP_CALLS_TOTAL.labels(server_name=server_name, tool_name=tool_name, status=status).inc()
+
+
+def record_token_usage(agent_name: str, input_tokens: int, output_tokens: int) -> None:
+    """Record LLM token usage for an agent API call."""
+    LLM_TOKENS_TOTAL.labels(agent_name=agent_name, token_type="input").inc(input_tokens)
+    LLM_TOKENS_TOTAL.labels(agent_name=agent_name, token_type="output").inc(output_tokens)
+    LLM_TOKENS_PER_REQUEST.observe(input_tokens + output_tokens)
+    # Also forward to OTel if initialized
+    try:
+        from observability.otel_tracer import record_token_usage as otel_record
+        otel_record(agent_name, input_tokens, output_tokens)
+    except Exception:
+        pass
