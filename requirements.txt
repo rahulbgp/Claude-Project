@@ -14,6 +14,14 @@ uvicorn[standard]>=0.34.0
 # Monitoring
 prometheus_client>=0.25.0
 
+# OpenTelemetry — traces, metrics, OTLP export (Step 15)
+opentelemetry-sdk>=1.25.0
+opentelemetry-exporter-otlp-proto-grpc>=1.25.0
+opentelemetry-semantic-conventions>=0.46b0
+
+# Graph database client (Step 18)
+neo4j>=5.20.0
+
 # Load testing
 locust>=2.34.0
 

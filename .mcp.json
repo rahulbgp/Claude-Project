@@ -9,6 +9,11 @@
       "type": "http",
       "url": "http://localhost:8766/mcp",
       "description": "AuditMCP — exposes audit trail logging and decision history retrieval"
+    },
+    "orchestration": {
+      "type": "http",
+      "url": "http://localhost:8767/mcp",
+      "description": "OrchestrationMCP — generic reusable server: agent registry, workflow state tracking, config store, event bus"
     }
   }
 }

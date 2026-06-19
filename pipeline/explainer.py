@@ -15,7 +15,6 @@ import anthropic
 
 from config import MAX_TOKENS, MIN_CREDIT_SCORE, MAX_DTI_RATIO, MODEL
 from observability.tracer import tracer
-from observability.metrics import record_token_usage
 
 logger = logging.getLogger(__name__)
 
@@ -229,9 +228,6 @@ Do NOT use jargon. Be empathetic but clear. If not eligible, suggest what they c
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
             )
-            record_token_usage("ExplainerAgent",
-                               getattr(response.usage, "input_tokens", 0),
-                               getattr(response.usage, "output_tokens", 0))
             return response.content[0].text.strip()
         except Exception as e:
             logger.error(f"ExplainerAgent API call failed: {e}", extra={"trace_id": trace_id})

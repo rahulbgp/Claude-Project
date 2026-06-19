@@ -38,8 +38,8 @@ from observability.tracer import tracer
 from governance import audit_trail
 from hooks.pre_hooks import run_pre_hooks
 from hooks.post_hooks import run_post_hooks
-from agents.orchestrator import OrchestratorAgent
-from agents.explainer import Verdict
+from pipeline.orchestrator import OrchestratorAgent
+from pipeline.explainer import Verdict
 from config import PROMETHEUS_PORT, MCP_LOAN_RULES_PORT, MCP_AUDIT_PORT, MODEL
 
 # ─── One-time Initialization ───────────────────────────────────────────────────

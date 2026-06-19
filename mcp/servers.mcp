@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "loan-rules": {
+      "type": "streamable-http",
+      "url": "http://localhost:8765/mcp",
+      "description": "LoanRulesMCP — loan policy rules server",
+      "config": "mcp/loan-rules-server.json",
+      "start": "python -c \"from services.server import start_mcp_servers; import time; start_mcp_servers(); time.sleep(86400)\""
+    },
+    "audit": {
+      "type": "streamable-http",
+      "url": "http://localhost:8766/mcp",
+      "description": "AuditMCP — audit trail and decision history server",
+      "config": "mcp/audit-server.json",
+      "start": "python -c \"from services.server import start_mcp_servers; import time; start_mcp_servers(); time.sleep(86400)\""
+    }
+  },
+  "note": "Both servers are started together via services/server.py::start_mcp_servers(). They run as daemon threads inside app.py and api.py. To start standalone: run the 'start' command above."
+}

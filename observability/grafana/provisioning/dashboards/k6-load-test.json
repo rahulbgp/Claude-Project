@@ -1,0 +1,180 @@
+{
+  "title": "K6 Load Test — Loan Agent",
+  "uid": "k6-loan-agent-v1",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Active Virtual Users",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "k6_vus",
+          "legendFormat": "VUs",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(k6_http_reqs_total[1m])",
+          "legendFormat": "req/s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "green" } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP Request Duration — p50 / p95 / p99",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 16, "h": 8 },
+      "targets": [
+        {
+          "expr": "k6_http_req_duration_p50",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "k6_http_req_duration_p95",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "k6_http_req_duration_p99",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "HTTP Failure Rate",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 8, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "expr": "k6_http_req_failed_rate",
+          "legendFormat": "failure rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red",    "value": 0.05 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Loan API Error Rate",
+      "type": "stat",
+      "gridPos": { "x": 20, "y": 8, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "expr": "k6_loan_api_error_rate_rate",
+          "legendFormat": "business errors",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red",    "value": 0.10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Verdict Distribution (K6 run)",
+      "type": "piechart",
+      "gridPos": { "x": 16, "y": 12, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "k6_loan_eligible_count_total",
+          "legendFormat": "Eligible",
+          "refId": "A"
+        },
+        {
+          "expr": "k6_loan_ineligible_count_total",
+          "legendFormat": "Ineligible",
+          "refId": "B"
+        },
+        {
+          "expr": "k6_loan_manual_review_count_total",
+          "legendFormat": "Manual Review",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "AI Processing Time p95 (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "k6_loan_processing_ms_p95",
+          "legendFormat": "p95 AI processing",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "color": { "mode": "fixed", "fixedColor": "orange" } }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Requests Received vs Loan Agent Throughput",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(k6_http_reqs_total[1m])",
+          "legendFormat": "K6 req/s (sent)",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(loan_requests_total[1m])",
+          "legendFormat": "Loan agent completions/s",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      }
+    }
+  ]
+}

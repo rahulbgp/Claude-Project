@@ -1,0 +1,42 @@
+{
+  "name": "PolicyDatabase",
+  "description": "In-memory loan policy store loaded at startup. Provides the data served by LoanRulesMCP. Can be overridden by a policies.yaml file in the project root.",
+  "implementation": "services/policy_db.py",
+  "load_order": "Tries policies.yaml first; merges over defaults if found. Falls back to hard-coded defaults.",
+  "policies": {
+    "credit_score": {
+      "min_credit_score": 700,
+      "excellent_threshold": 750,
+      "fair_threshold": 650,
+      "description": "Minimum credit score for loan approval is 700. Above 750 is excellent."
+    },
+    "dti": {
+      "max_dti_ratio": 0.40,
+      "preferred_dti": 0.30,
+      "description": "Total EMI (existing + new) must not exceed 40% of monthly income."
+    },
+    "age": {
+      "min_age": 21,
+      "max_age": 60,
+      "description": "Applicants must be between 21 and 60 years of age."
+    },
+    "employment": {
+      "Salaried":     {"stability_score": 1.0,  "description": "Highest stability — regular monthly income"},
+      "Self-Employed":{"stability_score": 0.75, "description": "Good stability — income may vary seasonally"},
+      "Contract":     {"stability_score": 0.60, "description": "Moderate stability — fixed-term employment"},
+      "Unemployed":   {"stability_score": 0.0,  "description": "Not eligible — no stable income source"}
+    },
+    "loan_products": {
+      "personal_loan": {"min_amount": 50000,   "max_amount": 2000000,  "default_tenure_months": 60,  "default_annual_rate": 0.10},
+      "home_loan":     {"min_amount": 500000,  "max_amount": 50000000, "default_tenure_months": 240, "default_annual_rate": 0.085},
+      "auto_loan":     {"min_amount": 100000,  "max_amount": 5000000,  "default_tenure_months": 84,  "default_annual_rate": 0.095}
+    },
+    "compliance": {
+      "kyc_required": true,
+      "max_loan_income_ratio": 10,
+      "regulatory_framework": "RBI_FAIR_LENDING_2023",
+      "fair_lending_policy": "All decisions based solely on financial merit",
+      "audit_retention_years": 7
+    }
+  }
+}

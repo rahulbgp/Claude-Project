@@ -1,0 +1,19 @@
+{
+  "main": {
+    "id": "main",
+    "type": "split",
+    "children": [
+      {
+        "id": "left-leaf",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": { "file": "README.md", "mode": "preview" }
+        }
+      }
+    ]
+  },
+  "left": { "id": "left-sidebar", "type": "split", "children": [], "collapsed": false },
+  "right": { "id": "right-sidebar", "type": "split", "children": [], "collapsed": true },
+  "active": "left-leaf"
+}

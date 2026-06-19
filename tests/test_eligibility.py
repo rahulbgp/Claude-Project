@@ -4,7 +4,7 @@ Tests the _determine_verdict() and _collect_reasons() methods without API calls.
 """
 
 import pytest
-from agents.explainer import EligibilityResult, ExplainerAgent, Verdict
+from pipeline.explainer import EligibilityResult, ExplainerAgent, Verdict
 from unittest.mock import MagicMock
 
 

@@ -1,0 +1,68 @@
+{
+  "name": "LoanRulesMCP",
+  "description": "MCP server exposing loan policy rules. Agents call this to fetch up-to-date credit score thresholds, DTI limits, age policy, employment stability scores, loan products, and compliance requirements.",
+  "transport": "streamable-http",
+  "port": 8765,
+  "url": "http://localhost:8765/mcp",
+  "implementation": "services/server.py::_run_loan_rules_server()",
+  "tools": [
+    {
+      "name": "get_credit_score_threshold",
+      "description": "Get the minimum credit score required for loan approval",
+      "returns": {
+        "min_credit_score": 700,
+        "excellent_threshold": 750,
+        "fair_threshold": 650,
+        "description": "Minimum credit score for loan approval is 700. Above 750 is excellent."
+      }
+    },
+    {
+      "name": "get_dti_policy",
+      "description": "Get the EMI-to-Income ratio policy limits",
+      "returns": {
+        "max_dti_ratio": 0.40,
+        "preferred_dti": 0.30,
+        "description": "Total EMI (existing + new) must not exceed 40% of monthly income."
+      }
+    },
+    {
+      "name": "get_age_policy",
+      "description": "Get the eligible age range for loan applicants",
+      "returns": {
+        "min_age": 21,
+        "max_age": 60,
+        "description": "Applicants must be between 21 and 60 years of age."
+      }
+    },
+    {
+      "name": "get_employment_policy",
+      "description": "Get employment type stability scores",
+      "returns": {
+        "Salaried": {"stability_score": 1.0},
+        "Self-Employed": {"stability_score": 0.75},
+        "Contract": {"stability_score": 0.60},
+        "Unemployed": {"stability_score": 0.0}
+      }
+    },
+    {
+      "name": "get_loan_products",
+      "description": "Get available loan products and their default terms",
+      "returns": {
+        "personal_loan": {"min_amount": 50000, "max_amount": 2000000, "default_tenure_months": 60, "default_annual_rate": 0.10},
+        "home_loan": {"min_amount": 500000, "max_amount": 50000000, "default_tenure_months": 240, "default_annual_rate": 0.085},
+        "auto_loan": {"min_amount": 100000, "max_amount": 5000000, "default_tenure_months": 84, "default_annual_rate": 0.095}
+      }
+    },
+    {
+      "name": "get_compliance_rules",
+      "description": "Get regulatory compliance requirements",
+      "returns": {
+        "kyc_required": true,
+        "max_loan_income_ratio": 10,
+        "regulatory_framework": "RBI_FAIR_LENDING_2023",
+        "fair_lending_policy": "All decisions based solely on financial merit",
+        "audit_retention_years": 7
+      }
+    }
+  ]
+}

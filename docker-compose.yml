@@ -1,0 +1,75 @@
+services:
+
+  # ── Prometheus ─────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: loan-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ── Grafana ────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: loan-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ── Neo4j — graph database (Step 18) ──────────────────────────────────────
+  neo4j:
+    image: neo4j:5.20
+    container_name: loan-neo4j
+    ports:
+      - "7474:7474"   # Neo4j Browser
+      - "7687:7687"   # Bolt protocol
+    environment:
+      NEO4J_AUTH: neo4j/neo4jpassword
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    restart: unless-stopped
+
+  # ── SigNoz (OTel full-stack — Step 15, optional) ──────────────────────────
+  # SigNoz requires several containers; this lightweight OpenTelemetry Collector
+  # + Jaeger alternative provides OTLP ingestion and a built-in trace UI.
+  # To enable: uncomment and set OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+  #
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:latest
+  #   container_name: loan-otel-collector
+  #   ports:
+  #     - "4317:4317"   # OTLP gRPC
+  #     - "4318:4318"   # OTLP HTTP
+  #   volumes:
+  #     - ./observability/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+  #   restart: unless-stopped
+  #
+  # jaeger:
+  #   image: jaegertracing/all-in-one:latest
+  #   container_name: loan-jaeger
+  #   ports:
+  #     - "16686:16686"  # Jaeger UI
+  #     - "14250:14250"  # gRPC
+  #   restart: unless-stopped
+
+volumes:
+  grafana_data:
+  neo4j_data:
+  neo4j_logs:

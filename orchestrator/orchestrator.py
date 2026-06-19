@@ -14,9 +14,9 @@ from typing import Optional
 
 import anthropic
 
-from agents.eligibility_checker import EligibilityCheckerAgent
-from agents.explainer import EligibilityResult, ExplainerAgent, LoanDecision, Verdict
-from agents.risk_assessor import RiskAssessorAgent
+from pipeline.eligibility_checker import EligibilityCheckerAgent
+from pipeline.explainer import EligibilityResult, ExplainerAgent, LoanDecision, Verdict
+from pipeline.risk_assessor import RiskAssessorAgent
 from config import ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL, MAX_RETRIES, MODEL, RETRY_BASE_DELAY
 from observability.tracer import tracer
 from observability.metrics import record_agent_failure
@@ -151,7 +151,7 @@ class OrchestratorAgent:
                 "Fast path: age disqualification",
                 extra={"trace_id": trace_id, "age": age},
             )
-            from agents.explainer import EligibilityResult
+            from pipeline.explainer import EligibilityResult
             eligibility = self.eligibility_agent._fallback_eligibility(applicant_data)
             return self.explainer_agent.run(eligibility, "CRITICAL", applicant_data, trace_id)
 
@@ -209,7 +209,7 @@ class OrchestratorAgent:
         applicant_data: dict,
     ) -> LoanDecision:
         """Pure rule-based fallback decision when all API calls fail."""
-        from agents.explainer import ExplainerAgent, Verdict
+        from pipeline.explainer import ExplainerAgent, Verdict
 
         # Use the explainer's deterministic path (no API call)
         local_explainer = ExplainerAgent(self.client)

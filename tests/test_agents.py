@@ -7,9 +7,9 @@ import json
 import pytest
 from unittest.mock import MagicMock, patch
 
-from agents.explainer import EligibilityResult, ExplainerAgent, LoanDecision, Verdict
-from agents.risk_assessor import RiskAssessorAgent
-from agents.eligibility_checker import EligibilityCheckerAgent
+from pipeline.explainer import EligibilityResult, ExplainerAgent, LoanDecision, Verdict
+from pipeline.risk_assessor import RiskAssessorAgent
+from pipeline.eligibility_checker import EligibilityCheckerAgent
 
 
 def make_eligibility_result(**kwargs):

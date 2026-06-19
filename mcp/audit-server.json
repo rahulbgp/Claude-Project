@@ -1,0 +1,47 @@
+{
+  "name": "AuditMCP",
+  "description": "MCP server for logging loan decisions and querying the audit trail. Writes to audit.db (SQLite). Used by the post-hooks compliance chain.",
+  "transport": "streamable-http",
+  "port": 8766,
+  "url": "http://localhost:8766/mcp",
+  "implementation": "services/server.py::_run_audit_server()",
+  "storage": {
+    "type": "sqlite",
+    "path": "audit.db",
+    "table": "audit_log"
+  },
+  "tools": [
+    {
+      "name": "log_decision",
+      "description": "Log a loan decision to the audit trail via MCP",
+      "input": {
+        "trace_id": "string",
+        "verdict": "ELIGIBLE | NOT_ELIGIBLE | MANUAL_REVIEW",
+        "reasons": "string[]",
+        "dti_ratio": "float"
+      },
+      "returns": {
+        "status": "logged | error",
+        "trace_id": "string"
+      }
+    },
+    {
+      "name": "get_decision_history",
+      "description": "Retrieve recent loan decisions from the audit trail",
+      "input": {
+        "limit": {"type": "integer", "default": 10}
+      },
+      "returns": {
+        "decisions": [
+          {
+            "trace_id": "string",
+            "timestamp": "ISO-8601",
+            "verdict": "string",
+            "dti_ratio": "float"
+          }
+        ],
+        "count": "integer"
+      }
+    }
+  ]
+}

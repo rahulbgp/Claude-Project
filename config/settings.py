@@ -49,10 +49,21 @@ MAX_RETRIES = 2        # Retry failed agent calls this many times
 RETRY_BASE_DELAY = 1   # Base delay in seconds for exponential backoff
 
 # ─── MCP Server Configuration ──────────────────────────────────────────────────
-MCP_LOAN_RULES_PORT = int(os.getenv("MCP_LOAN_RULES_PORT", "8765"))
-MCP_AUDIT_PORT = int(os.getenv("MCP_AUDIT_PORT", "8766"))
-MCP_LOAN_RULES_URL = f"http://localhost:{MCP_LOAN_RULES_PORT}/mcp"
-MCP_AUDIT_URL = f"http://localhost:{MCP_AUDIT_PORT}/mcp"
+MCP_LOAN_RULES_PORT    = int(os.getenv("MCP_LOAN_RULES_PORT",    "8765"))
+MCP_AUDIT_PORT         = int(os.getenv("MCP_AUDIT_PORT",         "8766"))
+MCP_ORCHESTRATION_PORT = int(os.getenv("MCP_ORCHESTRATION_PORT", "8767"))
+MCP_LOAN_RULES_URL     = f"http://localhost:{MCP_LOAN_RULES_PORT}/mcp"
+MCP_AUDIT_URL          = f"http://localhost:{MCP_AUDIT_PORT}/mcp"
+MCP_ORCHESTRATION_URL  = f"http://localhost:{MCP_ORCHESTRATION_PORT}/mcp"
+
+# ─── OpenTelemetry ─────────────────────────────────────────────────────────────
+OTEL_ENDPOINT    = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "loan-eligibility-agent")
+
+# ─── Neo4j Graph Database ──────────────────────────────────────────────────────
+NEO4J_URI      = os.getenv("NEO4J_URI",      "bolt://localhost:7687")
+NEO4J_USER     = os.getenv("NEO4J_USER",     "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "neo4jpassword")
 
 # ─── Observability ─────────────────────────────────────────────────────────────
 PROMETHEUS_PORT = int(os.getenv("PROMETHEUS_PORT", "9090"))

@@ -14,7 +14,6 @@ import anthropic
 from config import MODEL, MAX_TOKENS, DEFAULT_ANNUAL_INTEREST_RATE, DEFAULT_LOAN_TENURE_MONTHS
 from tools.loan_tools import TOOL_SCHEMAS, execute_tool
 from observability.tracer import tracer
-from observability.metrics import record_token_usage
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +89,6 @@ class RiskAssessorAgent:
                 tools=RISK_TOOLS,
                 messages=messages,
             )
-
-            record_token_usage("RiskAssessorAgent",
-                               getattr(response.usage, "input_tokens", 0),
-                               getattr(response.usage, "output_tokens", 0))
 
             # Collect tool_use blocks
             tool_use_blocks = [b for b in response.content if b.type == "tool_use"]

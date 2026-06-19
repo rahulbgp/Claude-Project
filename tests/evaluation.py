@@ -21,7 +21,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.orchestrator import OrchestratorAgent
+from pipeline.orchestrator import OrchestratorAgent
 from observability.tracer import tracer
 
 # ── Ground truth test cases ────────────────────────────────────────────────────

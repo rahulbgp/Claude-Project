@@ -16,12 +16,13 @@ import os
 import time
 from typing import Optional
 
-from agents.explainer import LoanDecision, Verdict
+from pipeline.explainer import LoanDecision, Verdict
 from config import LOG_DIR, MODEL, REVIEW_QUEUE_FILE
 from governance import audit_trail, compliance_logger
 from governance.bias_report import generate_bias_report
 from tools.bias_checker import aggregate_bias_check
 from observability import metrics
+from graph.node_builder import build_decision_graph
 
 logger = logging.getLogger(__name__)
 
@@ -234,5 +235,11 @@ def run_post_hooks(
         notify_manual_review(decision, pre_context, trace_id)
     except Exception as e:
         logger.error("Manual review hook failed", extra={"trace_id": trace_id, "error": str(e)})
+
+    # Hook 6: Neo4j graph nodes (best-effort — non-blocking)
+    try:
+        build_decision_graph(decision, pre_context, trace_id)
+    except Exception as e:
+        logger.debug("Graph write skipped: %s", e)
 
     return bias_flags

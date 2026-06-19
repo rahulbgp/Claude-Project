@@ -29,7 +29,7 @@ def _run_loan_rules_server(port: int) -> None:
         import uvicorn
 
         mcp = FastMCP("LoanRulesMCP")
-        from mcp.policy_db import POLICIES
+        from services.policy_db import POLICIES
 
         @mcp.tool()
         def get_credit_score_threshold() -> dict:

@@ -34,25 +34,32 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from observability.json_logger import setup_logging
 from observability.metrics import start_metrics_server
+from observability import otel_tracer
 from observability.tracer import tracer
 from governance import audit_trail
-from hooks.pre_hooks import run_pre_hooks
-from hooks.post_hooks import run_post_hooks
-from agents.orchestrator import OrchestratorAgent
-from agents.explainer import Verdict
-from config import PROMETHEUS_PORT, MCP_LOAN_RULES_PORT, MCP_AUDIT_PORT, MODEL
+from middleware.pre_hooks import run_pre_hooks
+from middleware.post_hooks import run_post_hooks
+from pipeline.orchestrator import OrchestratorAgent
+from pipeline.explainer import Verdict
+from config import (
+    PROMETHEUS_PORT, MCP_LOAN_RULES_PORT, MCP_AUDIT_PORT,
+    MCP_ORCHESTRATION_PORT, OTEL_ENDPOINT, OTEL_SERVICE_NAME, MODEL,
+)
 
 # ─── One-time Initialization ───────────────────────────────────────────────────
 # Use session_state to track initialization so it only runs once per session
 if "initialized" not in st.session_state:
     setup_logging()
     start_metrics_server(PROMETHEUS_PORT)
+    otel_tracer.initialize(service_name=OTEL_SERVICE_NAME, otlp_endpoint=OTEL_ENDPOINT or None)
     audit_trail.initialize_db()
 
     # Start MCP servers in daemon threads
     try:
-        from mcp.server import start_mcp_servers
+        from services.server import start_mcp_servers
+        from services.orchestration_mcp import start_orchestration_mcp
         start_mcp_servers(MCP_LOAN_RULES_PORT, MCP_AUDIT_PORT)
+        start_orchestration_mcp(MCP_ORCHESTRATION_PORT)
         time.sleep(0.5)  # Brief pause to let servers start
     except Exception as e:
         st.warning(f"MCP servers could not start: {e}. Using default policy values.")
